@@ -23,10 +23,34 @@ model Group {
   name String
   description String?
   color String @default("#FFFFFF")
-  tags String[]
+  tags String[] @default([])
   photo String?
   createdAt DateTime @default(now())
   
   userId String @db.Uuid
   user User @relation(fields: [userId], references: [id])
+
+  cards Card[]
+}
+
+model Card {
+  id Int @id @default(autoincrement()) @db.Integer
+  title String
+  mainInfo String? @default("")
+  color String @default("#FFFFFF")
+  tags String[] @default([])
+  photo String? @default("")
+  occupation String? @default("")
+  description String? @default("")
+  age String? @default("")
+  birthday String? @default("")
+  likes String[] @default([])
+  dislikes String[] @default([])
+  family String?
+  pets String?
+  createdAt DateTime @default(now())
+
+  groupId Int
+  group Group @relation(fields: [groupId], references: [id]) 
+
 }
