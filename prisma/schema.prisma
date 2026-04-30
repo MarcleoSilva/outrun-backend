@@ -8,49 +8,91 @@ datasource db {
   provider = "postgresql"
 }
 
+// Enums
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum GoalType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  FOREVER
+}
+
+// Main models
 model User {
   id String @id @default(uuid()) @db.Uuid
-  username String @unique
+  email String @unique
   name String
   password String
+  avatar String?
+  memberships Membership[]
+  activityLogs ActivityLog[]
   createdAt DateTime @default(now())
-
-  groups Group[]
 }
 
 model Group {
-  id Int @id @default(autoincrement()) @db.Integer
+  id String @id @default(uuid()) @db.Uuid
   name String
   description String?
-  color String @default("#FFFFFF")
-  tags String[] @default([])
-  photo String?
+  icon String?
+  totalDistance Float @default(0)
+  isPrivate Boolean @default(true)
+  memberships Membership[]
+  activityLogs ActivityLog[]
+  goals Goal[]
+  invites Invite[]
   createdAt DateTime @default(now())
-  
-  userId String @db.Uuid
-  user User @relation(fields: [userId], references: [id])
-
-  cards Card[]
 }
 
-model Card {
-  id Int @id @default(autoincrement()) @db.Integer
-  title String
-  mainInfo String? @default("")
-  color String @default("#FFFFFF")
-  tags String[] @default([])
-  photo String? @default("")
-  occupation String? @default("")
-  description String? @default("")
-  age String? @default("")
-  birthday String? @default("")
-  likes String[] @default([])
-  dislikes String[] @default([])
-  family String?
-  pets String?
+// Auxiliary models
+model Membership{
+  id String @id @default(uuid()) @db.Uuid
+  role Role @default(MEMBER)
+  
+  group Group @relation(fields: [groupId], references: [id])
+  groupId String @db.Uuid
+
+  user User @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+
+  @@unique([userId, groupId])
+}
+
+model ActivityLog {
+  id String @id @default(uuid()) @db.Uuid
+  distance Float
+  duration Int?
+  location String?
+  activityType String?
+  photo String?
+
+  user User @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+
+  group Group @relation(fields: [groupId], references: [id])
+  groupId String @db.Uuid
+
   createdAt DateTime @default(now())
+}
 
-  groupId Int
-  group Group @relation(fields: [groupId], references: [id]) 
+model Goal {
+  id String @id @default(uuid()) @db.Uuid
+  targetDistance Float
+  type GoalType
+  startDate DateTime
+  endDate DateTime?
+  group Group @relation(fields: [groupId], references: [id])
+  groupId String @db.Uuid
+}
 
+model Invite {
+  id String @id @default(uuid()) @db.Uuid
+  token String @unique
+  group Group @relation(fields: [groupId], references: [id])
+  groupId String @db.Uuid
+  expiration DateTime?
+  createdAt DateTime @default(now())
 }
