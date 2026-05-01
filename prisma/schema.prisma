@@ -28,9 +28,12 @@ model User {
   name String
   password String
   avatar String?
+  bio String?
   memberships Membership[]
   activityLogs ActivityLog[]
+  refreshTokens RefreshToken[]
   createdAt DateTime @default(now())
+
 }
 
 model Group {
@@ -95,4 +98,16 @@ model Invite {
   groupId String @db.Uuid
   expiration DateTime?
   createdAt DateTime @default(now())
+}
+
+model RefreshToken {
+  id String @id @default(uuid()) @db.Uuid
+  token String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @db.Uuid
+
+  expiresAt DateTime
+
+  @@map("refresh_tokens")
 }
