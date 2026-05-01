@@ -1,35 +1,97 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AuthRegisterDto } from 'src/auth/dto/register.dto';
 import { PrismaService } from 'src/common/prisma/prisma.service';
-import { Prisma } from 'src/generated/prisma/client';
+import { UpdateUserDto } from './dto/UpdateUser.dto';
 
 @Injectable()
 export class UsersService {
     constructor(private prisma: PrismaService) {}
 
-    async create(data: AuthRegisterDto) {
+    async create(registerDto: AuthRegisterDto) {
         const userExists = await this.prisma.user.findUnique({
-            where: {username: data.username},
+            where: {email: registerDto.email},
             select: {id: true}
         });
 
         if (userExists) {
-            throw new BadRequestException('User already exists');
+            throw new BadRequestException('Email already registered');
         }
 
-        return this.prisma.user.create({
+        return await this.prisma.user.create({
             data: {
-                username: data.username,
-                name: data.name,
-                password: data.password,
+                email: registerDto.email,
+                name: registerDto.name,
+                password: registerDto.password,
             }
         });
     }
 
-    // FINISH USER SERVICE
+    async findByIdWithPassword(id: string) {
+        const user = await this.prisma.user.findUnique({
+            where: {id: id}
+        });
 
-    getUsers() {
-        return this.prisma.user.findMany();
+        if (!user) throw new NotFoundException('User not found');
+
+        return user;
     }
+
+    async findByIdWithoutPassword(id: string) {
+        const user = await this.prisma.user.findUnique({
+            where: {id: id},
+            omit: {password: true}
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+
+        return user;
+    }
+
+    async findByEmail(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: {email: email},
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+
+        return user;
+    }
+
+    async update(id: string, updateDto: UpdateUserDto) {
+        const user = await this.prisma.user.findUnique({
+            where: {id: id},
+        });
+
+        if (!user) throw new NotFoundException('User not found');
+
+        return this.prisma.user.update({
+            where: {id: id},
+            data: {
+                name: updateDto.name,
+                avatar: updateDto.avatar,
+                bio: updateDto.bio,
+            },
+            omit: {password: true}
+        });
+        }
+
+        async delete(id: string) {
+            const user = await this.prisma.user.findUnique({
+                where: {id: id}
+            });
+            
+            if (!user) throw new NotFoundException('User not found');
+
+            return this.prisma.user.delete({
+                where: {id: id}
+            });
+        }
+
+        async updatePassword(id: string, newPassword: string){
+            return this.prisma.user.update({
+                where: {id: id},
+                data: {password: newPassword}
+            });
+        }
 
 }
